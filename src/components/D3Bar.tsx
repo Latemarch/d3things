@@ -38,7 +38,7 @@ export default function D3Bar({
       .attr("height", height + margin.top + margin.bottom)
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const xScale = d3.scaleLinear([1997, 2050], [0, width]);
+    const xScale = d3.scaleLinear([1970, 2050], [0, width]);
     const xAxis = d3
       .axisBottom(xScale)
       .tickValues(Array.from({ length: 7 }, (_, i) => 1980 + i * 10));
@@ -76,7 +76,16 @@ export default function D3Bar({
       .attr("height", 20)
       .attr("fill", "white");
 
-    const zoom = d3.zoom();
+    function handleZoom(e: any) {
+      const newScale = e.transform.rescaleX(xScale);
+      xAxisG.call(xAxis.scale(newScale));
+      borders.attr("x", (d) => newScale(d));
+      bars.attr("width", (d) => newScale(d));
+      console.log(e.transform);
+    }
+    const zoom = d3.zoom().on("zoom", handleZoom).scaleExtent([1, 10]);
+
+    svg.call(zoom as any);
   }, []);
 
   return <div ref={ref} className="font-bold"></div>;
