@@ -15,14 +15,8 @@ interface Props {
   width: number;
   margin?: Margin;
 }
-const initialMargin = { top: 20, bottom: 20, left: 20, right: 20 };
 
-export default function D3Bar({
-  data,
-  height,
-  width,
-  margin = initialMargin,
-}: Props) {
+export default function D3Bar({ data, height, width }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -34,9 +28,9 @@ export default function D3Bar({
     const svg = d3
       .select(ref.current)
       .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+      .attr("width", width)
+      .attr("height", height);
+    // .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const xScale = d3.scaleLinear([1970, 2050], [0, width]);
     const xAxis = d3
@@ -76,16 +70,39 @@ export default function D3Bar({
       .attr("height", 20)
       .attr("fill", "white");
 
+    const symbolGenerator = d3.symbol().type(d3.symbolDiamond).size(100);
+
+    const marks = svg
+      .selectAll("mark")
+      .data([2020, 2030])
+      .enter()
+      .append("path")
+      .attr("transform", (d) => `translate(${xScale(d)}, 40)`)
+      .attr("d", symbolGenerator)
+      .attr("fill", "white");
+
     function handleZoom(e: any) {
       const newScale = e.transform.rescaleX(xScale);
       xAxisG.call(xAxis.scale(newScale));
       borders.attr("x", (d) => newScale(d));
+      marks.attr("transform", (d) => `translate(${newScale(d)}, 40)`);
       bars.attr("width", (d) => newScale(d));
-      console.log(e.transform);
     }
-    const zoom = d3.zoom().on("zoom", handleZoom).scaleExtent([1, 10]);
+    const zoom = d3
+      .zoom()
+      .on("zoom", handleZoom)
+      .scaleExtent([1, 5])
+      .translateExtent([
+        [0, 0],
+        [width, height],
+      ]);
 
-    svg.call(zoom as any);
+    svg
+      .call(zoom as any)
+      .call(
+        zoom.transform as any,
+        d3.zoomIdentity.translate(-(width * 0.481), 0).scale(1.481)
+      );
   }, []);
 
   return <div ref={ref} className="font-bold"></div>;
