@@ -6,25 +6,43 @@ import * as d3 from "d3";
 
 interface Props {
   data: number[];
+  width?: number;
+  height?: number;
 }
 
 const eventData = [
   {
-    name: "인구4000",
+    name: "3천만명 ",
     year: 2000,
   },
-  { name: "인구3000", year: 2010 },
-  { name: "인구2000", year: 2015 },
-  { name: "인구1000", year: 2020 },
+  { name: "5천만명 진입!!!", year: 2010 },
+  { name: "4천만명 진입!!", year: 2015 },
+  { name: "3천만명 진입!", year: 2020 },
 ];
-const width = 1000;
-const height = 90;
 const handleCenter = -5;
-export default function D3Bar({ data }: Props) {
+export default function D3Bar({ data, height = 90 }: Props) {
   const [handlePosition, setHandlePosition] = useState(2023);
-  const ref = useRef<HTMLDivElement | null>(null);
-  const newScaleRef = useRef<d3.ScaleLinear<number, number>>();
+  const [width, setContainerWidth] = useState<number>(1200);
   const handlePositionRef = useRef<number>(0);
+  const newScaleRef = useRef<d3.ScaleLinear<number, number>>();
+  const ref = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // 이 함수는 window 크기가 변경될 때마다 실행됩니다.(to get container width and set recoil state)
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.getBoundingClientRect().width);
+      }
+    };
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -35,10 +53,9 @@ export default function D3Bar({ data }: Props) {
     const svg = d3
       .select(ref.current)
       .append("svg")
-      // .attr("width", width)
-      // .attr("height", height);
-
-      .attr("viewBox", `0 0 1000 100`);
+      .attr("width", width)
+      .attr("height", height);
+    // .attr("viewBox", `0 0 1000 90`);
 
     const xScale = d3.scaleLinear([1970, 2050], [0, width]);
 
@@ -87,9 +104,7 @@ export default function D3Bar({ data }: Props) {
       .enter()
       .append("g")
       .attr("transform", (d) => `translate(${xScale(d.year)}, 40)`);
-    // .append("path")
-    // .attr("d", symbolGenerator)
-    // .attr("fill", "white");
+
     const icons = marks
       .append("path")
       .attr("d", symbolGenerator)
@@ -98,7 +113,8 @@ export default function D3Bar({ data }: Props) {
     const tooltip = d3
       .select("body")
       .append("div")
-      .classed("speech-bubble text-sm", true)
+      .classed("relative", true)
+      .classed("speech-bubble text-sm ", true)
       .style("display", "none"); // Initially hidden
 
     marks.on("mousemove", function (event, d) {
@@ -106,26 +122,21 @@ export default function D3Bar({ data }: Props) {
       // Show and position the tooltip
       if (!newScaleRef.current) return;
       tooltip
-        .style("left", `${newScaleRef.current(d.year) + 8}px`)
-        .style("top", "50px")
+        .style("left", `${event.x}px`)
+        .style("top", "70px")
         .style("display", "block")
         .html(`<p>${d.name}</p>`);
+      d3.select(this)
+        .attr("stroke", "black") // This adds a black border
+        .attr("stroke-width", "1");
     });
 
     marks.on("mouseleave", function () {
       // Hide the tooltip
       tooltip.style("display", "none");
+      d3.select(this).attr("stroke", "none"); // This adds a black border
     });
 
-    // marks.on("mousemove", function (e, d) {
-    //   d3.select(this);
-    // });
-
-    // marks.on("mouseleave", function (e) {
-    //   d3.select(this).attr("fill", "white");
-    // });
-
-    //Draggable handle
     const drag = d3.drag<SVGGElement, number, number>().on("drag", dragging);
 
     function dragging(
@@ -263,11 +274,11 @@ export default function D3Bar({ data }: Props) {
       });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [width]);
 
   return (
-    <div className="flex flex-col bg-gray-300 items-end">
-      <div className="flex gap-2">
+    <div ref={containerRef} className="flex flex-col items-end">
+      <div className="flex gap-2 text-2xl">
         <BsPause id="pause" />
         <div id="btns" className="flex gap-2">
           <BsPlay id="1" />

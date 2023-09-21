@@ -2,7 +2,7 @@ import D3Bar from "@/components/D3Bar";
 
 export default function D3Line() {
   return (
-    <div className="p-10">
+    <div className="p-10 w-full">
       <D3Bar data={data} />
     </div>
   );
