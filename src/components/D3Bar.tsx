@@ -1,20 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BsFastForward, BsPause, BsPlay } from "react-icons/bs";
 import * as d3 from "d3";
 
 interface Props {
   data: number[];
 }
 
-const width = 500;
-const height = 100;
+const eventData = [
+  {
+    name: "인구4000",
+    year: 2000,
+  },
+  { name: "인구3000", year: 2010 },
+  { name: "인구2000", year: 2015 },
+  { name: "인구1000", year: 2020 },
+];
+const width = 1000;
+const height = 90;
+const handleCenter = -5;
 export default function D3Bar({ data }: Props) {
-  const [handlePosition, setHandlePosition] = useState(0);
+  const [handlePosition, setHandlePosition] = useState(2023);
   const ref = useRef<HTMLDivElement | null>(null);
   const newScaleRef = useRef<d3.ScaleLinear<number, number>>();
   const handlePositionRef = useRef<number>(0);
-  const handleXRef = useRef<number>(0);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -25,10 +35,10 @@ export default function D3Bar({ data }: Props) {
     const svg = d3
       .select(ref.current)
       .append("svg")
-      .attr("width", width)
-      .attr("height", height);
+      // .attr("width", width)
+      // .attr("height", height);
 
-    // .attr("viewBox", `0 0 1000 100`);
+      .attr("viewBox", `0 0 1000 100`);
 
     const xScale = d3.scaleLinear([1970, 2050], [0, width]);
 
@@ -54,7 +64,7 @@ export default function D3Bar({ data }: Props) {
       .attr("y", 30)
       .attr("width", (d) => xScale(d))
       .attr("height", 20)
-      .attr("fill", (d) => (d > 2023 ? "#63ABFF" : "#D9D9D9"));
+      .attr("fill", (d) => (d > 2024 ? "#63ABFF" : "#D9D9D9"));
 
     //border line in every 10 year
     const borders = svg
@@ -71,14 +81,49 @@ export default function D3Bar({ data }: Props) {
 
     //markers
     const symbolGenerator = d3.symbol().type(d3.symbolDiamond).size(100);
-    const marks = svg
+    const marks = svg //
       .selectAll("mark")
-      .data([2020, 2030])
+      .data(eventData)
       .enter()
+      .append("g")
+      .attr("transform", (d) => `translate(${xScale(d.year)}, 40)`);
+    // .append("path")
+    // .attr("d", symbolGenerator)
+    // .attr("fill", "white");
+    const icons = marks
       .append("path")
-      .attr("transform", (d) => `translate(${xScale(d)}, 40)`)
       .attr("d", symbolGenerator)
       .attr("fill", "white");
+
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .classed("speech-bubble text-sm", true)
+      .style("display", "none"); // Initially hidden
+
+    marks.on("mousemove", function (event, d) {
+      // Get mouse position
+      // Show and position the tooltip
+      if (!newScaleRef.current) return;
+      tooltip
+        .style("left", `${newScaleRef.current(d.year) + 8}px`)
+        .style("top", "50px")
+        .style("display", "block")
+        .html(`<p>${d.name}</p>`);
+    });
+
+    marks.on("mouseleave", function () {
+      // Hide the tooltip
+      tooltip.style("display", "none");
+    });
+
+    // marks.on("mousemove", function (e, d) {
+    //   d3.select(this);
+    // });
+
+    // marks.on("mouseleave", function (e) {
+    //   d3.select(this).attr("fill", "white");
+    // });
 
     //Draggable handle
     const drag = d3.drag<SVGGElement, number, number>().on("drag", dragging);
@@ -87,11 +132,11 @@ export default function D3Bar({ data }: Props) {
       this: SVGGElement,
       e: d3.D3DragEvent<SVGGElement, number, number>
     ) {
-      const nX = Math.max(-5, Math.min(width, e.x));
-      const newX = Math.min(nX, width - 5);
+      const nX = Math.max(2, Math.min(width, e.x));
+      const newX = Math.min(nX, width - 3);
 
       // d3.select(this).attr("x", newX);
-      d3.select(this).attr("transform", `translate(${newX},10)`);
+      d3.select(this).attr("transform", `translate(${newX + handleCenter},10)`);
 
       if (!newScaleRef.current) return;
       const year = Math.round(newScaleRef.current.invert(newX));
@@ -104,8 +149,8 @@ export default function D3Bar({ data }: Props) {
       .data([2023])
       .enter()
       .append("g")
-      .attr("transform", (d) => `translate(${xScale(d)},10 )`)
-      .call(drag); // Apply the drag behavior to the group
+      .attr("transform", (d) => `translate(${xScale(d) - 5},10 )`)
+      .call(drag);
 
     // Append the first rectangle to the handle
     handle
@@ -142,17 +187,36 @@ export default function D3Bar({ data }: Props) {
     //zoom
     function handleZoom(e: any) {
       const newScale = e.transform.rescaleX(xScale);
+      const duration = 50;
       newScaleRef.current = newScale;
-      xAxisG.call(xAxis.scale(newScale));
-      borders.attr("x", (d) => newScale(d));
-      handle.attr(
-        "transform",
-        `translate(${newScale(
-          handlePositionRef.current ? handlePositionRef.current : 2023
-        )}, 10)`
-      );
-      marks.attr("transform", (d) => `translate(${newScale(d)}, 40)`);
-      bars.attr("width", (d) => newScale(d));
+
+      xAxisG.transition().duration(duration).call(xAxis.scale(newScale));
+
+      borders
+        .transition()
+        .duration(duration)
+        .attr("x", (d) => newScale(d));
+      handle
+        .transition()
+        .duration(duration)
+        .attr(
+          "transform",
+          `translate(${
+            newScale(
+              handlePositionRef.current ? handlePositionRef.current : 2023
+              // handlePosition
+            ) + handleCenter
+          }, 10)`
+        );
+
+      marks
+        .transition()
+        .duration(duration)
+        .attr("transform", (d) => `translate(${newScale(d.year)}, 40)`);
+      bars
+        .transition()
+        .duration(duration)
+        .attr("width", (d) => newScale(d));
     }
 
     const zoom = d3
@@ -170,12 +234,51 @@ export default function D3Bar({ data }: Props) {
         zoom.transform as any,
         d3.zoomIdentity.translate(-(width * 0.481), 0).scale(1.481)
       );
+    document
+      .getElementById("pause")
+      ?.addEventListener("click", function (e: MouseEvent) {
+        console.log("pause");
+        d3.interrupt(handle.node());
+      });
+    document
+      .getElementById("btns")
+      ?.addEventListener("click", function (e: MouseEvent) {
+        const targetElement = e.target as HTMLElement;
+        handle
+          .transition()
+          .ease(d3.easeLinear)
+          .duration(20000 / (targetElement.id ? parseInt(targetElement.id) : 1))
+          .attrTween("transform", function (d) {
+            const interpolate = d3.interpolate(0, width - 10);
+            return function (t) {
+              const newX = interpolate(t);
+
+              if (newScaleRef.current) {
+                const year = Math.round(newScaleRef?.current?.invert(newX));
+                setHandlePosition(year);
+              }
+              return `translate(${newX},10)`;
+            };
+          });
+      });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div ref={ref} className="font-bold w-full relative">
+    <div className="flex flex-col bg-gray-300 items-end">
+      <div className="flex gap-2">
+        <BsPause id="pause" />
+        <div id="btns" className="flex gap-2">
+          <BsPlay id="1" />
+          <BsFastForward id="2" />
+          <div className="flex relative px-1">
+            <BsPlay id="3" className="absolute" />
+            <BsFastForward id="3" />
+          </div>
+        </div>
+      </div>
+      <div ref={ref} className="font-bold w-full relative"></div>
       <div>{handlePosition}</div>
     </div>
   );
