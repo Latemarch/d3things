@@ -39,6 +39,7 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
     const map = svg
       .selectAll("path")
       .append("g")
+      .attr("class", "map1")
       .data(mapData.features)
       .enter()
       .append("path")
@@ -63,6 +64,20 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
         d3.selectAll(".ac").remove();
       });
 
+    svg
+      .selectAll(".place-label")
+      .data(mapData.features)
+      .enter()
+      .append("text")
+      .attr("class", "place-label")
+      .attr("transform", function (d) {
+        return "translate(" + projection(geoGenerator.centroid(d)) + ")";
+      })
+      .attr("dy", ".35em")
+      .text(function (d) {
+        return d.properties?.name;
+      });
+
     const zoom = d3
       .zoom()
       .on("zoom", handleZoom)
@@ -74,7 +89,7 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
     svg.call(zoom as any);
 
     function handleZoom(e: d3.D3ZoomEvent<SVGElement, unknown>) {
-      map.attr("transform", e.transform.toString());
+      d3.select(".map1").attr("transform", e.transform.toString());
     }
   }, []);
 
