@@ -19,8 +19,6 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
     //Remove any existing SVG
     d3.select(ref.current).selectAll("svg").remove();
 
-    const xScale = d3.scaleLinear([0, width], [0, width]);
-
     const svg = d3
       .select(ref.current)
       .append("svg")
@@ -28,23 +26,47 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
       .attr("height", height)
       .style("border", "2px solid steelblue");
 
-    const projection = d3
-      .geoEquirectangular()
-      .scale(width / 7)
-      .translate([width / 2, height / 2]);
+    const projection = d3.geoEquirectangular().fitExtent(
+      [
+        [10, 10],
+        [width - 10, height - 10],
+      ],
+      mapData
+    );
+
+    const geoGenerator = d3.geoPath().projection(projection);
 
     const map = svg
-      .append("g")
       .selectAll("path")
+      .append("g")
       .data(mapData.features)
-      .join("path")
+      .enter()
+      .append("path")
+      .attr("d", geoGenerator)
       .attr("fill", "#69b3a2")
-      .attr("d", d3.geoPath().projection(projection));
+      .on("mouseover", function (e, d) {
+        d3.select(this).attr("fill", "#63ABFF");
+        const center = geoGenerator.centroid(d);
+        svg
+          .append("circle")
+          .attr("cx", center[0])
+          .attr("cy", center[1])
+          .attr("r", 5)
+          .attr("fill", "none")
+          .attr("stroke", "black")
+          .classed("ac", true);
+
+        console.log(center);
+      })
+      .on("mouseleave", function () {
+        d3.select(this).attr("fill", "#69b3a2");
+        d3.selectAll(".ac").remove();
+      });
 
     const zoom = d3
       .zoom()
       .on("zoom", handleZoom)
-      .scaleExtent([0.1, 20])
+      .scaleExtent([1, 2000])
       .translateExtent([
         [0, 0],
         [width, height],
@@ -52,13 +74,7 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
     svg.call(zoom as any);
 
     function handleZoom(e: d3.D3ZoomEvent<SVGElement, unknown>) {
-      const newScale = e.transform.rescaleX(xScale);
-      const duration = 50;
-      console.log(e.transform.toString());
-      map
-        .transition()
-        .duration(duration)
-        .attr("transform", e.transform.toString());
+      map.attr("transform", e.transform.toString());
     }
   }, []);
 

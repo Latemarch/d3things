@@ -118,9 +118,6 @@ export default function D3Bar({ data, height = 90 }: Props) {
       .style("display", "none"); // Initially hidden
 
     marks.on("mousemove", function (event, d) {
-      // Get mouse position
-      // Show and position the tooltip
-      if (!newScaleRef.current) return;
       tooltip
         .style("left", `${event.x}px`)
         .style("top", "70px")
