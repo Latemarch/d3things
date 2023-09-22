@@ -196,7 +196,7 @@ export default function D3Bar({ data, height = 90 }: Props) {
       .attr("stroke-linecap", "round");
 
     //zoom
-    function handleZoom(e: any) {
+    function handleZoom(e: d3.D3ZoomEvent<SVGGElement, unknown>) {
       const newScale = e.transform.rescaleX(xScale);
       const duration = 50;
       newScaleRef.current = newScale;
