@@ -71,7 +71,7 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
       .append("text")
       .attr("class", "place-label")
       .attr("transform", function (d) {
-        return "translate(" + projection(geoGenerator.centroid(d)) + ")";
+        return "translate(" + geoGenerator.centroid(d) + ")";
       })
       .attr("dy", ".35em")
       .text(function (d) {
