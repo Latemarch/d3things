@@ -9,9 +9,25 @@ interface Props {
   height?: number;
   width?: number;
 }
+const initialScaleRef = {
+  scaleX: (x: number) => x,
+  scaleY: (y: number) => y,
+};
 
 export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const scaleRef = useRef<{ [key: string]: (x: number) => number }>(
+    initialScaleRef
+  );
+
+  const rus = d3.geoCentroid(
+    mapData.features.find((f) => f.properties?.name_en === "Russia")!!
+  );
+
+  const bra = d3.geoCentroid(
+    mapData.features.find((f) => f.properties?.name_long === "Brazil")!!
+  );
+  console.log(rus, bra);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -48,23 +64,23 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
       .on("mouseover", function (e, d) {
         d3.select(this).attr("fill", "#63ABFF");
         const center = geoGenerator.centroid(d);
+        console.log(center);
         svg
           .append("circle")
-          .attr("cx", center[0])
-          .attr("cy", center[1])
+          .attr("class", "marker")
+          .attr("cx", scaleRef.current.scaleX(center[0]))
+          .attr("cy", scaleRef.current.scaleY(center[1]))
           .attr("r", 5)
           .attr("fill", "none")
           .attr("stroke", "black")
           .classed("ac", true);
-
-        console.log(center);
       })
       .on("mouseleave", function () {
         d3.select(this).attr("fill", "#69b3a2");
         d3.selectAll(".ac").remove();
       });
 
-    svg
+    const text = svg
       .selectAll(".place-label")
       .data(mapData.features)
       .enter()
@@ -75,8 +91,30 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
       })
       .attr("dy", ".35em")
       .text(function (d) {
-        return d.properties?.name;
+        return d.properties?.sido_nm;
       });
+
+    const geoInterpolator = d3.geoInterpolate(
+      bra as [number, number],
+      rus as [number, number]
+    );
+
+    const interpolatedPoints = d3
+      .range(0, 1.1, 0.05)
+      .map((t) => projection(geoInterpolator(t)));
+
+    console.log(interpolatedPoints);
+    const curveLine = d3
+      .line()
+      .curve(d3.curveCardinal.tension(1))
+      .x((d) => d[0])
+      .y((d) => d[1]);
+    const curve = svg
+      .append("path")
+      .datum(interpolatedPoints)
+      .attr("d", curveLine as any)
+      .attr("fill", "none")
+      .attr("stroke", "red");
 
     const zoom = d3
       .zoom()
@@ -89,9 +127,18 @@ export default function D3Map({ mapData, height = 300, width = 600 }: Props) {
     svg.call(zoom as any);
 
     function handleZoom(e: d3.D3ZoomEvent<SVGElement, unknown>) {
-      d3.select(".map1").attr("transform", e.transform.toString());
+      const scaleX = (x: number) => e.transform.applyX(x);
+      const scaleY = (y: number) => e.transform.applyY(y);
+      scaleRef.current = { scaleX, scaleY };
+      map.attr("transform", e.transform.toString());
+      text.attr("transform", function (d) {
+        const [x, y] = geoGenerator.centroid(d);
+        return `translate(${scaleX(x)},${scaleY(y)})`;
+      });
+      curve.attr("transform", e.transform.toString());
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapData]);
 
   return <div ref={ref}>D3Map</div>;
 }

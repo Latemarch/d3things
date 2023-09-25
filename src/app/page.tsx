@@ -1,5 +1,3 @@
-import D3Line from "@/components/D3Line";
-
-export default function Home() {
+export default function page() {
   return <main>home</main>;
 }
