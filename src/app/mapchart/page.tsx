@@ -1,6 +1,5 @@
 import D3Map from "@/components/D3Map";
-import D3MapMultiPolygon from "@/components/D3MapMultiPolygon";
-import { getMap } from "@/service/server";
+import D3Slider from "@/components/D3Slider";
 import { FeatureCollection } from "geojson";
 
 const baseUrl = process.env.SERVER_BASEURL!!;
@@ -16,6 +15,7 @@ export default async function page() {
   return (
     <div className="p-4">
       <D3Map mapData={mapData} height={600} />
+      <D3Slider />
     </div>
   );
 }

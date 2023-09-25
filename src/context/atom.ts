@@ -13,3 +13,8 @@ export const targetLocation = atom<LocalProps>({
   key: "targetLocation",
   default: { category: "total", localName: "none" },
 });
+
+export const LivingSliderPoint = atom<number>({
+  key: "LivingSliderPoint",
+  default: 10,
+});
