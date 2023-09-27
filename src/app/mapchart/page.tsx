@@ -1,8 +1,9 @@
-import D3Map from '@/components/D3Map'
-import D3Slider from '@/components/D3Slider'
-import { FeatureCollection } from 'geojson'
+import D3Map from "@/components/D3Map";
+import D3PopulationPyramid from "@/components/D3PopulationPyramid";
+import D3Slider from "@/components/D3Slider";
+import { FeatureCollection } from "geojson";
 
-const baseUrl = process.env.SERVER_BASEURL!!
+const baseUrl = process.env.SERVER_BASEURL!!;
 export default async function page() {
   // const mapData = await getMap("world.geo.json");
   // const mapData: FeatureCollection = await fetch(
@@ -15,14 +16,15 @@ export default async function page() {
   return (
     <div className="p-4">
       {/* <D3Map mapData={mapData} height={600} /> */}
-      <D3Slider />
+      {/* <D3Slider /> */}
+      <D3PopulationPyramid />
     </div>
-  )
+  );
 }
 
 function convertToGeoJSON(data: any) {
   return {
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: data.map((item: any) => item.alias1.feature),
-  }
+  };
 }
