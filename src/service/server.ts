@@ -48,3 +48,12 @@ export const getTicks = cache(
     return tickData
   },
 )
+
+export const getJsonTicks = cache(
+  async (filename: string): Promise<Array<Array<string>>> => {
+    const filePath = path.join(process.cwd(), 'public', 'tickdata', filename)
+    const file = fs.readFileSync(filePath, 'utf8')
+    const jsonFile = JSON.parse(file)
+    return jsonFile
+  },
+)
