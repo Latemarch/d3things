@@ -18,15 +18,15 @@ export default function D3KakaoMap({ data }: Props) {
   const initialZoomLevel = 9;
 
   const center = d3.geoCentroid(data);
-  // const projection = d3.geoMercator().fitWidth(500, data);
-  // const geoGenerator = d3.geoPath().projection(projection);
+  const projection = d3.geoMercator().fitWidth(575, data);
+  const geoGenerator = d3.geoPath().projection(projection);
 
   //kakao Map load
   useEffect(() => {
     console.log(center);
     KakaoMapLoader({
       setMap: setMap,
-      // location: [center[1], center[0]],
+      location: [center[1], center[0]],
       otherOptions: { level: initialZoomLevel },
     });
   }, []);
@@ -34,17 +34,6 @@ export default function D3KakaoMap({ data }: Props) {
   useEffect(() => {
     if (!map || !window.kakao) return;
 
-    // kakao.maps.event.addListener(map, "click", (e: any) => {
-    //   console.log(e.latLng);
-    // });
-
-    // kakao.maps.event.addListener(map, "zoom_changed", () =>
-    //   zoomSVGOnKakaoMap({
-    //     map,
-    //     allSVG: d3.select(".body").selectAll("svg"),
-    //     initialZoomLevel,
-    //   })
-    // );
     const mapProjection = map.getProjection();
     const mapBounds = map.getBounds();
     const mapSW = mapBounds.getSouthWest();
@@ -67,42 +56,49 @@ export default function D3KakaoMap({ data }: Props) {
       .style("opacity", "0.5")
       .append("g");
 
-    // const projection = d3.geoMercator().fitWidth(580, data);
-    // console.log(data);
-    // console.log(projection(data.features[0]));
-    // const geoGenerator = d3.geoPath().projection(projection);
-    // const [x, y] = projection(center) as Array<number>;
+    const [x, y] = projection(center) as Array<number>;
+    const mapPolygon = svg
+      .selectAll("path")
+      .append("g")
+      .attr("class", "map1")
+      .data(data.features)
+      .enter()
+      .append("path")
+      .attr("d", (d: any) => geoGenerator(d))
+      .attr("fill", "#69b3a2")
+      .attr("stroke", "white")
+      .attr("transform", `translate(${width / 2 - x},${height / 2 - y - 2})`)
+      .on("mouseover", function (e, d) {
+        d3.select(this).attr("fill", "#e8e8e8");
+      })
+      .on("mouseleave", function () {
+        d3.select(this).attr("fill", "#69b3a2");
+      })
+      .on("click", function (e, d) {
+        // console.log(projection.invert([e.x, e.y]));
+      });
 
-    // const mapPolygon = svg
-    //   .selectAll("path")
-    //   .append("g")
-    //   .attr("class", "map1")
-    //   .data(data.features)
-    //   .enter()
-    //   .append("path")
-    //   .attr("d", (d: any) => geoGenerator(d))
-    //   .attr("fill", "#69b3a2")
-    //   .attr("stroke", "white")
-    //   .attr("transform", `translate(${width / 2 - x},${height / 2 - y - 2})`)
-    //   .on("mouseover", function (e, d) {
-    //     d3.select(this).attr("fill", "#cb7070");
-    //   })
-    //   .on("mouseleave", function () {
-    //     d3.select(this).attr("fill", "#69b3a2");
-    //   })
-    //   .on("click", function (e, d) {
-    //     // console.log(projection.invert([e.x, e.y]));
-    //   });
+    const position = new window.kakao.maps.LatLng(center[1], center[0]);
+    const content = document.getElementsByClassName("svg")[0];
+    const custumOverlay = new window.kakao.maps.CustomOverlay({
+      position,
+      content,
+    });
+    custumOverlay.setMap(map);
+    const projectionObj = map.getProjection();
+    console.log(projectionObj);
 
-    // const position = new window.kakao.maps.LatLng(center[1], center[0]);
-    // const content = document.getElementsByClassName("svg")[0];
-    // const custumOverlay = new window.kakao.maps.CustomOverlay({
-    //   position,
-    //   content,
+    // kakao.maps.event.addListener(map, "click", (e: any) => {
+    //   console.log(e.latLng);
     // });
-    // custumOverlay.setMap(map);
-    // const projectionObj = map.getProjection();
-    // console.log(projectionObj);
+
+    // kakao.maps.event.addListener(map, "zoom_changed", () =>
+    //   zoomSVGOnKakaoMap({
+    //     map,
+    //     allSVG: d3.select(".body").selectAll("svg"),
+    //     initialZoomLevel,
+    //   })
+    // );
     // return () => {
     //   kakao.maps.event.removeListener(map, "zoom_changed", () =>
     //     zoomSVGOnKakaoMap({

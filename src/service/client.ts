@@ -23,7 +23,7 @@ export function KakaoMapLoader({
     window.kakao.maps.load(() => {
       const options = {
         center: new window.kakao.maps.LatLng(location[0], location[1]), // 지도의 중심좌표
-        level: 5,
+        level: 9,
         ...otherOptions,
       };
       const map = new window.kakao.maps.Map(container, options);
