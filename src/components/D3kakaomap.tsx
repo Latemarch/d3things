@@ -18,7 +18,7 @@ export default function D3KakaoMap({ data }: Props) {
   const initialZoomLevel = 9;
 
   const center = d3.geoCentroid(data);
-  const projection = d3.geoMercator().fitWidth(575, data);
+  const projection = d3.geoMercator().fitWidth(578, data);
   const geoGenerator = d3.geoPath().projection(projection);
 
   //kakao Map load
@@ -67,7 +67,7 @@ export default function D3KakaoMap({ data }: Props) {
       .attr("d", (d: any) => geoGenerator(d))
       .attr("fill", "#69b3a2")
       .attr("stroke", "white")
-      .attr("transform", `translate(${width / 2 - x},${height / 2 - y - 2})`)
+      .attr("transform", `translate(${width / 2 - x},${height / 2 - y - 6})`)
       .on("mouseover", function (e, d) {
         d3.select(this).attr("fill", "#e8e8e8");
       })
@@ -79,7 +79,7 @@ export default function D3KakaoMap({ data }: Props) {
       });
 
     const position = new window.kakao.maps.LatLng(center[1], center[0]);
-    const content = document.getElementsByClassName("svg")[0];
+    const content = document.getElementsByClassName("svg")[0] as HTMLElement;
     const custumOverlay = new window.kakao.maps.CustomOverlay({
       position,
       content,
@@ -92,22 +92,22 @@ export default function D3KakaoMap({ data }: Props) {
     //   console.log(e.latLng);
     // });
 
-    // kakao.maps.event.addListener(map, "zoom_changed", () =>
-    //   zoomSVGOnKakaoMap({
-    //     map,
-    //     allSVG: d3.select(".body").selectAll("svg"),
-    //     initialZoomLevel,
-    //   })
-    // );
-    // return () => {
-    //   kakao.maps.event.removeListener(map, "zoom_changed", () =>
-    //     zoomSVGOnKakaoMap({
-    //       map,
-    //       allSVG: d3.selectAll("svg"),
-    //       initialZoomLevel,
-    //     })
-    //   );
-    // };
+    kakao.maps.event.addListener(map, "zoom_changed", () =>
+      zoomSVGOnKakaoMap({
+        map,
+        allSVG: d3.select(".body").selectAll("svg"),
+        initialZoomLevel,
+      })
+    );
+    return () => {
+      kakao.maps.event.removeListener(map, "zoom_changed", () =>
+        zoomSVGOnKakaoMap({
+          map,
+          allSVG: d3.selectAll("svg"),
+          initialZoomLevel,
+        })
+      );
+    };
   }, [map]);
 
   return (
