@@ -5,7 +5,7 @@ export default async function page() {
   const mapData = await getLocalMap();
 
   return (
-    <div className="p-4">
+    <div className="">
       <D3KakaoMap data={mapData} />
     </div>
   );
