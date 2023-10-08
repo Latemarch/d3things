@@ -39,16 +39,17 @@ export default function D3CnadleStick({
     const svg = container.append("g").attr("transform", `translate(50,40)`);
 
     const [min, max] = getPriceRange(data);
-    const x = d3.scaleLinear([0, 1440], [0, width]);
-    const y = d3.scaleLinear([min - 50, max + 50], [height, 0]);
-    console.log(min, max);
-    console.log(data.length);
+    const x = d3.scaleUtc([data[0][0], data[data.length - 1][0]], [0, width]);
+    const T = x.ticks();
+    const f = x.tickFormat();
+    T.map(f);
 
-    const xAxis = d3.axisBottom(x);
-    const xAxisG = svg
+    const y = d3.scaleLinear([min - 50, max + 50], [height, 0]);
+
+    const xAxis = svg
       .append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(xAxis);
+      .call(d3.axisBottom(x));
     const yAxis = svg.append("g").call(d3.axisLeft(y));
 
     const bars = svg
@@ -57,19 +58,33 @@ export default function D3CnadleStick({
       .selectAll("rect")
       .data(data as number[][])
       .join("rect")
-      .attr("x", (d, i) => x(i))
+      .attr("x", (d, i) => x(d[0]))
       .attr("y", (d) => y(d[1] > d[4] ? d[1] : d[4]))
-      .attr("width", x(width / 1440))
+      // .attr("width", x(data[0][0] + 60))
+      .attr("width", width / data.length)
       .attr("fill", (d) => (d[1] > d[4] ? "#ED4549" : "#8BC53F"))
       .attr("height", (d) => (d[4] === d[1] ? 1 : Math.abs(y(d[4]) - y(d[1]))));
+
+    const lines = svg
+      .append("g")
+      .attr("clip-path", "url(#clip)")
+      .selectAll("line")
+      .data(data as number[][])
+      .join("line")
+      .attr("stroke", (d) => (d[1] > d[4] ? "#ED4549" : "#8BC53F"))
+      .attr("x1", (d, i) => x(i + 0.5))
+      .attr("x2", (d, i) => x(i + 0.5))
+      .attr("y1", (d) => y(d[2]))
+      .attr("y2", (d) => y(d[3]))
+      .attr("stroke-width", 1);
 
     const zoom = d3
       .zoom()
       .on("zoom", handleZoom)
-      .scaleExtent([1, 20])
+      .scaleExtent([1.2, 20])
       .translateExtent([
-        [-50, 0],
-        [width + 50, height],
+        [0, 0],
+        [width + 120, height],
       ]);
 
     container
@@ -80,21 +95,30 @@ export default function D3CnadleStick({
       );
     function handleZoom(e: d3.D3ZoomEvent<SVGGElement, unknown>) {
       const newScaleX = e.transform.rescaleX(x);
-      xAxisG.call(xAxis.scale(newScaleX));
-      const minX = newScaleX.invert(0);
-      const maxX = newScaleX.invert(width);
+      const sX = e.transform.rescaleX(
+        d3.scaleLinear([0, data.length], [0, width])
+      );
+      const minX = sX.invert(0);
+      const maxX = sX.invert(width);
       const [min, max] = getPriceRange(data.slice(minX, maxX));
       const newScaleY = d3.scaleLinear([min - 50, max + 50], [height, 0]);
       bars
-        .attr("x", (d, i) => newScaleX(i))
+        .attr("x", (d, i) => sX(i))
         .attr("y", (d) => newScaleY(d[1] > d[4] ? d[1] : d[4])) // this part
         .attr("width", width / (maxX - minX))
         .attr("height", (d) =>
           d[4] === d[1] ? 1 : Math.abs(newScaleY(d[4]) - newScaleY(d[1]))
         );
+      lines
+        .attr("x1", (d, i) => sX(i + 0.5))
+        .attr("x2", (d, i) => sX(i + 0.5))
+        .attr("y1", (d) => newScaleY(d[2])) // d[0] is just an example, adjust the index
+        .attr("y2", (d) => newScaleY(d[3])); // d[3] is just an example, adjust the index
+
+      xAxis.call(d3.axisBottom(x).scale(newScaleX));
       yAxis.call(d3.axisLeft(y).scale(newScaleY));
-      console.log(min, max);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <div ref={ref} className="p-10"></div>;
