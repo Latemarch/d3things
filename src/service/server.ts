@@ -52,7 +52,11 @@ export const getJsonTicks = cache(
     const filePath = path.join(process.cwd(), "public", "tickdata", filename);
     const file = fs.readFileSync(filePath, "utf8");
     const jsonFile = JSON.parse(file);
-    return jsonFile;
+
+    return jsonFile.map((el: number[]) => {
+      el[0] *= 1000;
+      return el;
+    });
   }
 );
 
