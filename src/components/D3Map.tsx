@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { Feature, FeatureCollection } from "geojson";
+import { addFlow } from "@/service/client";
 
 interface Props {
   mapData: FeatureCollection;
@@ -22,15 +24,6 @@ export default function D3Map({ mapData }: Props) {
   const scaleRef = useRef<{ [key: string]: (x: number) => number }>(
     initialScaleRef
   );
-
-  const rus = d3.geoCentroid(
-    mapData.features.find((f) => f.properties?.id === 1)!!
-  );
-
-  const bra = d3.geoCentroid(
-    mapData.features.find((f) => f.properties?.id === 2)!!
-  );
-  console.log(mapData);
 
   useEffect(() => {
     // 이 함수는 window 크기가 변경될 때마다 실행됩니다.(to get container width and set recoil state)
@@ -65,7 +58,7 @@ export default function D3Map({ mapData }: Props) {
     svg //
       .attr("viewBox", `0 0 ${width} ${height}`)
       .call(zoom as any)
-      // .classed("bg-gray-300", true)
+      .classed("bg-[#212121]", true)
       .append("g");
 
     const projection = d3.geoMercator().fitExtent(
@@ -86,13 +79,13 @@ export default function D3Map({ mapData }: Props) {
       .enter()
       .append("path")
       .attr("d", geoGenerator)
-      .attr("fill", "black")
-      .attr("stroke", "black")
+      .attr("fill", "#0e0e0e")
+      // .attr("stroke", "white")
+      .attr("stroke-width", 0.1)
       .attr("data-id", (d: Feature) => d.properties?.id)
       .on("mouseover", function (e, d) {
         // d3.select(this).attr("fill", "#63ABFF");
         const center = geoGenerator.centroid(d);
-        console.log(center);
         // svg
         //   .append("circle")
         //   .attr("class", "marker")
@@ -104,7 +97,7 @@ export default function D3Map({ mapData }: Props) {
         //   .classed("ac", true);
       })
       .on("mouseleave", function () {
-        // d3.select(this).attr("fill", "#69b3a2");
+        // d3.select(this).attr("fill", "steelblue");
         // d3.selectAll(".ac").remove();
       });
 
@@ -122,30 +115,9 @@ export default function D3Map({ mapData }: Props) {
         return d.properties?.sido_nm;
       });
 
-    // const geoInterpolator = d3.geoInterpolate(
-    //   bra as [number, number],
-    //   rus as [number, number]
-    // );
-
-    // const interpolatedPoints = d3
-    //   .range(0, 1, 0.05)
-    //   .map((t) => projection(geoInterpolator(t)));
-
-    // const curveLine = d3
-    //   .line()
-    //   .curve(d3.curveBasis) //.tension(-1))
-    //   .x((d) => d[0])
-    //   .y((d) => d[1]);
-    // const curve = svg
-    //   .append("path")
-    //   .datum(interpolatedPoints)
-    //   .attr("d", curveLine as any)
-    //   .attr("fill", "none")
-    //   .attr("stroke", "red");
-
     dummyFlow.forEach((el) => {
       addFlow({
-        startPointId: 1,
+        startPointId: 21,
         endPointId: el.id,
         projection,
         svg,
@@ -166,7 +138,6 @@ export default function D3Map({ mapData }: Props) {
       svg.selectAll(".flowLine").attr("transform", e.transform.toString());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    console.log(height);
   }, [height, width]);
 
   return (
@@ -177,73 +148,20 @@ export default function D3Map({ mapData }: Props) {
 }
 
 const dummyFlow = [
-  { id: 2, flow: 10000 },
-  { id: 3, flow: 20000 },
-  { id: 4, flow: 30000 },
-  { id: 5, flow: 40000 },
-  { id: 6, flow: 50000 },
-  { id: 7, flow: 60000 },
-  // { id: 8, flow: 70000 },
-  { id: 9, flow: 90000 },
-  // { id: 10, flow: 100000 },
+  { id: 42, flow: 10000 },
+  { id: 38, flow: 20000 },
+  { id: 24, flow: 30000 },
+  { id: 25, flow: 40000 },
+  { id: 26, flow: 50000 },
+  { id: 37, flow: 60000 },
+  { id: 28, flow: 70000 },
+  { id: 19, flow: 90000 },
+  { id: 10, flow: 100000 },
   { id: 11, flow: 110000 },
-  // { id: 12, flow: 120000 },
-  { id: 13, flow: 130000 },
-  { id: 14, flow: 140000 },
-  { id: 15, flow: 150000 },
-  { id: 16, flow: 160000 },
-  { id: 17, flow: 160000 },
+  { id: 32, flow: 120000 },
+  { id: 23, flow: 130000 },
+  { id: 34, flow: 140000 },
+  { id: 35, flow: 150000 },
+  { id: 26, flow: 160000 },
+  { id: 27, flow: 160000 },
 ];
-
-type AddFlowLine = {
-  startPointId: number;
-  endPointId: number;
-  projection: d3.GeoProjection;
-  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
-  mapData: FeatureCollection;
-};
-function addFlow({
-  startPointId,
-  endPointId,
-  projection,
-  svg,
-  mapData,
-}: AddFlowLine) {
-  const startPoint = d3.geoCentroid(
-    mapData.features.find((f) => f.properties?.id === startPointId)!!
-  );
-  const endPoint = d3.geoCentroid(
-    mapData.features.find((f) => f.properties?.id === endPointId)!!
-  );
-  const pointA = projection(startPoint);
-  const pointB = projection(endPoint);
-  if (!pointA || !pointB) return;
-  const controlPoint = [
-    (pointA[0] + pointB[0]) / 2,
-    pointB[0] > pointA[0]
-      ? pointA[1] - (pointB[0] - pointA[0]) / 2
-      : pointA[1] + (pointB[0] - pointA[0]) / 2,
-  ];
-
-  const pathData = [
-    "M",
-    pointA[0],
-    pointA[1],
-    "Q",
-    controlPoint[0],
-    controlPoint[1], // 제어점
-    pointB[0],
-    pointB[1],
-  ].join(" ");
-  const color = d3.interpolateHslLong("purple", "orange")(endPointId / 20);
-  svg
-    .append("path")
-    .attr("d", pathData)
-    .attr("class", "flowLine")
-    .attr("fill", "none")
-    .attr("stroke", color);
-  d3.select(`path[data-id='${endPointId}']`)
-    .attr("fill", color)
-    .attr("opacity", "0.9");
-  svg.classed("bg-zinc-900", true);
-}
