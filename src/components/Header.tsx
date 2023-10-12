@@ -7,6 +7,7 @@ export default function Header() {
       <Link href="/barchart">bar</Link>
       <Link href="/candlestick">CandleStick</Link>
       <Link href="/mapchart">Map</Link>
+      <Link href="/test">test</Link>
     </div>
   )
 }
