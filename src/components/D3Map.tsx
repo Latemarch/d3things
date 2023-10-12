@@ -1,91 +1,91 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-"use client";
+'use client'
 
-import { useEffect, useRef, useState } from "react";
-import * as d3 from "d3";
-import { Feature, FeatureCollection } from "geojson";
-import { addFlow } from "@/service/client";
+import { useEffect, useRef, useState } from 'react'
+import * as d3 from 'd3'
+import { Feature, FeatureCollection } from 'geojson'
+import { addFlow } from '@/service/client'
 
 interface Props {
-  mapData: FeatureCollection;
-  height?: number;
-  width?: number;
+  mapData: FeatureCollection
+  height?: number
+  width?: number
 }
 const initialScaleRef = {
   scaleX: (x: number) => x,
   scaleY: (y: number) => y,
-};
+}
 
 export default function D3Map({ mapData }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [width, setContainerWidth] = useState<number>(1200);
-  const [height, setContainerHeight] = useState<number>(1200);
-  const ref = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [width, setContainerWidth] = useState<number>(1200)
+  const [height, setContainerHeight] = useState<number>(1200)
+  const ref = useRef<HTMLDivElement | null>(null)
   const scaleRef = useRef<{ [key: string]: (x: number) => number }>(
-    initialScaleRef
-  );
+    initialScaleRef,
+  )
 
   useEffect(() => {
     // 이 함수는 window 크기가 변경될 때마다 실행됩니다.(to get container width and set recoil state)
     const handleResize = () => {
       if (containerRef.current) {
-        setContainerWidth(containerRef.current.getBoundingClientRect().width);
-        setContainerHeight(containerRef.current.getBoundingClientRect().height);
+        setContainerWidth(containerRef.current.getBoundingClientRect().width)
+        setContainerHeight(containerRef.current.getBoundingClientRect().height)
       }
-    };
-    handleResize();
+    }
+    handleResize()
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize)
     return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+      window.removeEventListener('resize', handleResize)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current) return
 
     //Remove any existing SVG
-    d3.select(ref.current).selectAll("svg").remove();
+    d3.select(ref.current).selectAll('svg').remove()
     const zoom = d3
       .zoom()
-      .on("zoom", handleZoom)
+      .on('zoom', handleZoom)
       .scaleExtent([1, 20])
       .translateExtent([
         [0, 0],
         [width, height],
-      ]);
-    const svg = d3.select(ref.current).append("svg");
+      ])
+    const svg = d3.select(ref.current).append('svg')
     svg //
-      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr('viewBox', `0 0 ${width} ${height}`)
       .call(zoom as any)
-      .classed("bg-[#212121]", true)
-      .append("g");
+      .classed('bg-[#212121]', true)
+      .append('g')
 
     const projection = d3.geoMercator().fitExtent(
       [
         [0, 30],
         [width, height - 200],
       ],
-      mapData
-    );
+      mapData,
+    )
 
-    const geoGenerator = d3.geoPath().projection(projection);
+    const geoGenerator = d3.geoPath().projection(projection)
 
     const map = svg
-      .selectAll("path")
-      .append("g")
-      .attr("class", "map1")
+      .selectAll('path')
+      .append('g')
+      .attr('class', 'map1')
       .data(mapData.features)
       .enter()
-      .append("path")
-      .attr("d", geoGenerator)
-      .attr("fill", "#0e0e0e")
+      .append('path')
+      .attr('d', geoGenerator)
+      .attr('fill', '#0e0e0e')
       // .attr("stroke", "white")
-      .attr("stroke-width", 0.1)
-      .attr("data-id", (d: Feature) => d.properties?.id)
-      .on("mouseover", function (e, d) {
+      .attr('stroke-width', 0.1)
+      .attr('data-id', (d: Feature) => d.properties?.id)
+      .on('mouseover', function (e, d) {
         // d3.select(this).attr("fill", "#63ABFF");
-        const center = geoGenerator.centroid(d);
+        const center = geoGenerator.centroid(d)
         // svg
         //   .append("circle")
         //   .attr("class", "marker")
@@ -96,24 +96,24 @@ export default function D3Map({ mapData }: Props) {
         //   .attr("stroke", "black")
         //   .classed("ac", true);
       })
-      .on("mouseleave", function () {
+      .on('mouseleave', function () {
         // d3.select(this).attr("fill", "steelblue");
         // d3.selectAll(".ac").remove();
-      });
+      })
 
     const text = svg
-      .selectAll(".place-label")
+      .selectAll('.place-label')
       .data(mapData.features)
       .enter()
-      .append("text")
-      .attr("class", "place-label")
-      .attr("transform", function (d) {
-        return "translate(" + geoGenerator.centroid(d) + ")";
+      .append('text')
+      .attr('class', 'place-label')
+      .attr('transform', function (d) {
+        return 'translate(' + geoGenerator.centroid(d) + ')'
       })
-      .attr("dy", ".35em")
+      .attr('dy', '.35em')
       .text(function (d) {
-        return d.properties?.sido_nm;
-      });
+        return d.properties?.sido_nm
+      })
 
     dummyFlow.forEach((el) => {
       addFlow({
@@ -122,29 +122,32 @@ export default function D3Map({ mapData }: Props) {
         projection,
         svg,
         mapData,
-      });
-    });
+      })
+    })
 
     function handleZoom(e: d3.D3ZoomEvent<SVGElement, unknown>) {
-      const scaleX = (x: number) => e.transform.applyX(x);
-      const scaleY = (y: number) => e.transform.applyY(y);
-      scaleRef.current = { scaleX, scaleY };
-      map.attr("transform", e.transform.toString());
-      text.attr("transform", function (d) {
-        const [x, y] = geoGenerator.centroid(d);
-        return `translate(${scaleX(x)},${scaleY(y)})`;
-      });
+      const scaleX = (x: number) => e.transform.applyX(x)
+      const scaleY = (y: number) => e.transform.applyY(y)
+      scaleRef.current = { scaleX, scaleY }
+      map.attr('transform', e.transform.toString())
+      text.attr('transform', function (d) {
+        const [x, y] = geoGenerator.centroid(d)
+        return `translate(${scaleX(x)},${scaleY(y)})`
+      })
       // curve.attr("transform", e.transform.toString());
-      svg.selectAll(".flowLine").attr("transform", e.transform.toString());
+      svg.selectAll('.flowLine').attr('transform', e.transform.toString())
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height, width]);
+  }, [height, width])
 
   return (
-    <div ref={containerRef} className="flex w-full h-full justify-center ">
+    <div
+      ref={containerRef}
+      className="flex fixed w-full h-full justify-center "
+    >
       <div ref={ref} className="fixed w-full"></div>
     </div>
-  );
+  )
 }
 
 const dummyFlow = [
@@ -164,4 +167,4 @@ const dummyFlow = [
   { id: 35, flow: 150000 },
   { id: 26, flow: 160000 },
   { id: 27, flow: 160000 },
-];
+]

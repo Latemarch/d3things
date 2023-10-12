@@ -21,7 +21,8 @@ export default function RootLayout({
       <RecoilProvider>
         <body className={inter.className}>
           <Header />
-          {children}
+
+          <div className="relative flex w-full ">{children}</div>
         </body>
       </RecoilProvider>
     </html>
