@@ -65,7 +65,6 @@ export async function getLocalMap() {
   const file = fs.readFileSync(filePath, "utf8");
   const jsonFile = JSON.parse(file);
   return convertToGeoJSON(jsonFile);
-  return;
 }
 export function convertToGeoJSON(data: any) {
   return {
