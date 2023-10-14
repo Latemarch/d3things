@@ -1,9 +1,13 @@
 import D3Bar from "@/components/D3Bar";
+import D3BarSSR from "@/components/D3BarSSR";
+import D3BarSSRHydration from "@/components/D3BarSSRHydration";
+import D3ssr from "@/components/D3ssr";
 
 export default function D3Line() {
   return (
     <div className="p-10 w-full">
       <D3Bar data={data} />
+      <D3BarSSR data={data} />
     </div>
   );
 }
