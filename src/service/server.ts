@@ -72,3 +72,16 @@ export function convertToGeoJSON(data: any) {
     features: data.map((item: any) => item.alias1.feature),
   };
 }
+
+export function getTopojsonKorea() {
+  const filePath = path.join(
+    process.cwd(),
+    "public",
+    "data",
+    "projection",
+    "map",
+    "koreaemdtopo.json"
+  );
+  const file = fs.readFileSync(filePath, "utf-8");
+  return JSON.parse(file);
+}
