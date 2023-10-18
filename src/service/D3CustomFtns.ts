@@ -1,5 +1,7 @@
 import * as d3 from "d3";
-import { FeatureCollection } from "geojson";
+import * as topojson from "topojson-client";
+import { Feature, FeatureCollection, MultiLineString } from "geojson";
+import { Topology, GeometryObject } from "topojson-specification";
 type AddFlowLine = {
   sourcePointId: number;
   targetPointId: number;
@@ -164,4 +166,74 @@ function createCirclePolygon(
     type: "Polygon",
     coordinates: [points],
   };
+}
+
+// 10/18
+export function getGeoMapFromTopo(
+  topoMap: Topology,
+  localCode?: string,
+  objName: string = "jjh",
+  width: number = 2000,
+  height: number = 600
+): {
+  geoMap: FeatureCollection;
+  boundaries: MultiLineString;
+  projection: d3.GeoProjection;
+  geoGenerator: d3.GeoPath<any, d3.GeoPermissibleObjects>;
+} {
+  const objectName = objName;
+  const geometries = (topoMap.objects[objectName] as any).geometries;
+
+  let selectedGeometries = geometries;
+  if (localCode) {
+    selectedGeometries = geometries.filter(
+      (geometry: any) =>
+        geometry.properties[localCode.length > 2 ? "sgg" : "sido"] === localCode
+    );
+  }
+
+  const selectedTopoObject = {
+    type: "GeometryCollection",
+    geometries: selectedGeometries,
+  };
+
+  //@ts-expect-error
+  const geoMap: FeatureCollection = topojson.feature(
+    topoMap,
+    selectedTopoObject as GeometryObject
+  );
+
+  const boundaries = topojson.mesh(
+    topoMap,
+    selectedTopoObject as GeometryObject,
+    (a, b) => a === b
+  );
+
+  const projection = d3.geoMercator().fitExtent(
+    [
+      [0, 0],
+      [width, height * 1.4],
+    ],
+    geoMap
+  );
+
+  const geoGenerator = d3.geoPath().projection(projection);
+
+  return { geoMap, boundaries, projection, geoGenerator };
+}
+
+export async function getInnerBoundry(scale: string, localCode?: string) {
+  const geoKorea = await getFile(`${scale}Korea.json`);
+  if (!localCode) return geoKorea;
+  const boundryScale =
+    localCode.length === 2 ? "sido" : localCode.length === 5 ? "sgg" : "adm";
+  const filteredMap = geoKorea.features.filter(
+    (feature: Feature) =>
+      feature.properties && feature.properties[boundryScale] === localCode
+  );
+  const geoMap: FeatureCollection = {
+    type: "FeatureCollection",
+    features: filteredMap,
+  };
+  return geoMap;
 }
